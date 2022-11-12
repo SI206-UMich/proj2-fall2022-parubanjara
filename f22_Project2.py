@@ -76,8 +76,39 @@ def get_listing_information(listing_id):
         number of bedrooms
     )
     """
-    pass
+    with open(f"html_files/listing_{listing_id}.html", "r", encoding="utf-8") as fh:
+        soup = BeautifulSoup(fh, 'html.parser')
+        policy_tag = soup.find('li', class_="f19phm7j dir dir-ltr")
+        policy_number = policy_tag.text.split(':')
+        policy_number = policy_number[1].strip()
+        if 'Pending' in policy_number or 'pending' in policy_number:
+          policy_number = "Pending"
+        elif 'License not needed' in policy_number:
+            policy_number = "Exempt"
+        else:
+            policy_number
 
+        place_tag = soup.find('h2', class_="_14i3z6h")
+        place_type = place_tag.text
+        if "Private" in place_type:
+            place_type = "Private Room"
+        elif "Shared" in place_type:
+            place_type = "Shared Room"
+        elif "private" not in place_type and "Shared" not in place_type:
+            place_type = "Entire Room"
+
+        num_tags = soup.find_all('li', class_="l7n4lsf dir dir-ltr")
+
+    nums = []
+    for num_tag in num_tags:
+        info = re.sub(r'\s{2,}', '', num_tag.text)
+        num_match = re.search(r'\d', info)
+        
+        num_bedroom = num_match.group(0)
+        if num_match is not None:
+            nums.append(int(num_bedroom))
+    num_bedroom = nums[1]
+    return tuple([policy_number, place_type, num_bedroom])
 
 def get_detailed_listing_database(html_file):
     """
@@ -180,33 +211,32 @@ class TestCases(unittest.TestCase):
         # check that the last title is correct (open the search results html and find it)
         self.assertEqual(listings[-1][0], 'Guest suite in Mission District')
 
-    # def test_get_listing_information(self):
-    #     html_list = ["1623609",
-    #                  "1944564",
-    #                  "1550913",
-    #                  "4616596",
-    #                  "6600081"]
-    #     # call get_listing_information for i in html_list:
-    #     listing_informations = [get_listing_information(id) for id in html_list]
-    #     # check that the number of listing information is correct (5)
-    #     self.assertEqual(len(listing_informations), 5)
-    #     for listing_information in listing_informations:
-    #         # check that each item in the list is a tuple
-    #         self.assertEqual(type(listing_information), tuple)
-    #         # check that each tuple has 3 elements
-    #         self.assertEqual(len(listing_information), 3)
-    #         # check that the first two elements in the tuple are string
-    #         self.assertEqual(type(listing_information[0]), str)
-    #         self.assertEqual(type(listing_information[1]), str)
-    #         # check that the third element in the tuple is an int
-    #         self.assertEqual(type(listing_information[2]), int)
-    #     # check that the first listing in the html_list has policy number 'STR-0001541'
-
-    #     # check that the last listing in the html_list is a "Private Room"
-
-    #     # check that the third listing has one bedroom
-
-    #     pass
+    def test_get_listing_information(self):
+        html_list = ["1623609",
+                     "1944564",
+                     "1550913",
+                     "4616596",
+                     "6600081"]
+        # call get_listing_information for i in html_list:
+        listing_informations = [get_listing_information(id) for id in html_list]
+        # check that the number of listing information is correct (5)
+        self.assertEqual(len(listing_informations), 5)
+        for listing_information in listing_informations:
+            # check that each item in the list is a tuple
+            self.assertEqual(type(listing_information), tuple)
+            # check that each tuple has 3 elements
+            self.assertEqual(len(listing_information), 3)
+            # check that the first two elements in the tuple are string
+            self.assertEqual(type(listing_information[0]), str)
+            self.assertEqual(type(listing_information[1]), str)
+            # check that the third element in the tuple is an int
+            self.assertEqual(type(listing_information[2]), int)
+        # check that the first listing in the html_list has policy number 'STR-0001541'
+        self.assertEqual(listing_informations[0][0], 'STR-0001541')
+        # check that the last listing in the html_list is a "Private Room"
+        self.assertEqual(listing_informations[-1][1], 'Private Room')
+        # check that the third listing has one bedroom
+        self.assertEqual(listing_informations[2][2], 1)
 
     # def test_get_detailed_listing_database(self):
     #     # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
