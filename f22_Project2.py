@@ -104,8 +104,8 @@ def get_listing_information(listing_id):
         info = re.sub(r'\s{2,}', '', num_tag.text)
         num_match = re.search(r'\d', info)
         
-        num_bedroom = num_match.group(0)
         if num_match is not None:
+            num_bedroom = num_match.group(0)
             nums.append(int(num_bedroom))
     num_bedroom = nums[1]
     return tuple([policy_number, place_type, num_bedroom])
@@ -124,8 +124,30 @@ def get_detailed_listing_database(html_file):
         ...
     ]
     """
-    pass
+    listings_search_results = get_listings_from_search_results(html_file)
+    listing_titles = []
+    listing_costs = []
+    listing_ids = []
+    policy_numbers = []
+    place_types = []
+    num_bedrooms = []
+    for listings_search_result in listings_search_results:
+        listing_title = listings_search_result[0]
+        listing_titles.append(listing_title)
+        listing_cost = listings_search_result[1]
+        listing_costs.append(listing_cost)
+        listing_id = listings_search_result[2]
+        listing_ids.append(listing_id)
+        listing_information = get_listing_information(listing_id)
+        policy_number = listing_information[0]
+        policy_numbers.append(policy_number)
+        place_type = listing_information[1]
+        place_types.append(place_type)
+        num_bedroom = listing_information[2]
+        num_bedrooms.append(num_bedroom)
 
+    detailed_listings = list(zip(listing_titles, listing_costs, listing_ids, policy_numbers, place_types, num_bedrooms))
+    return detailed_listings
 
 def write_csv(data, filename):
     """
@@ -238,24 +260,23 @@ class TestCases(unittest.TestCase):
         # check that the third listing has one bedroom
         self.assertEqual(listing_informations[2][2], 1)
 
-    # def test_get_detailed_listing_database(self):
-    #     # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
-    #     # and save it to a variable
-    #     detailed_database = get_detailed_listing_database("html_files/mission_district_search_results.html")
-    #     # check that we have the right number of listings (20)
-    #     self.assertEqual(len(detailed_database), 20)
-    #     for item in detailed_database:
-    #         # assert each item in the list of listings is a tuple
-    #         self.assertEqual(type(item), tuple)
-    #         # check that each tuple has a length of 6
-
-    #     # check that the first tuple is made up of the following:
-    #     # 'Loft in Mission District', 210, '1944564', '2022-004088STR', 'Entire Room', 1
-
-    #     # check that the last tuple is made up of the following:
-    #     # 'Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1
-
-    #     pass
+    def test_get_detailed_listing_database(self):
+        # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
+        # and save it to a variable
+        detailed_database = get_detailed_listing_database("html_files/mission_district_search_results.html")
+        # check that we have the right number of listings (20)
+        self.assertEqual(len(detailed_database), 20)
+        for item in detailed_database:
+            # assert each item in the list of listings is a tuple
+            self.assertEqual(type(item), tuple)
+            # check that each tuple has a length of 6
+            self.assertEqual(len(item), 6)
+        # check that the first tuple is made up of the following:
+        # 'Loft in Mission District', 210, '1944564', '2022-004088STR', 'Entire Room', 1
+        self.assertEqual(detailed_database[0], ('Loft in Mission District', 210, '1944564', '2022-004088STR', 'Entire Room', 1))
+        # check that the last tuple is made up of the following:
+        # 'Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1
+        self.assertEqual(detailed_database[-1], ('Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1))
 
     # def test_write_csv(self):
     #     # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
