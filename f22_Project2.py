@@ -36,17 +36,17 @@ def get_listings_from_search_results(html_file):
 
     for price_tag in price_tags:
         match = re.search(r'^\$(\d+)$',price_tag.text)
-        cost = match.group(1)
+        cost = match.group(1).strip()
         costs.append(int(cost))
 
     for tag in tags:
-        title = re.sub(r'\s{2,}', ' ', tag.text)
+        title = re.sub(r'\s{2,}', ' ', tag.text).strip()
         listing_titles.append(title)
         id = tag.get('id')
 
         match = re.search(r'^\D+([0-9]+)$', id)
         if match:
-            listing_id = match.group(1)
+            listing_id = match.group(1).strip()
             listing_ids.append(listing_id)
 
     return list(zip(listing_titles, costs, listing_ids))
@@ -171,7 +171,13 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
-    pass
+    sorted_tup = sorted(data, key=lambda x : x[1], reverse = False)
+    with open(filename, 'w', newline='') as fh:
+        header = ["Listing Title", "Cost", "Listing ID", "Policy Number", "Place Type", "Number of Bedrooms"]
+        writer = csv.writer(fh)
+        writer.writerow(header)
+        for row in sorted_tup:
+            writer.writerow(row)
 
 
 def check_policy_numbers(data):
@@ -278,27 +284,26 @@ class TestCases(unittest.TestCase):
         # 'Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1
         self.assertEqual(detailed_database[-1], ('Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1))
 
-    # def test_write_csv(self):
-    #     # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
-    #     # and save the result to a variable
-    #     detailed_database = get_detailed_listing_database("html_files/mission_district_search_results.html")
-    #     # call write csv on the variable you saved
-    #     write_csv(detailed_database, "test.csv")
-    #     # read in the csv that you wrote
-    #     csv_lines = []
-    #     with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.csv'), 'r') as f:
-    #         csv_reader = csv.reader(f)
-    #         for i in csv_reader:
-    #             csv_lines.append(i)
-    #     # check that there are 21 lines in the csv
-    #     self.assertEqual(len(csv_lines), 21)
-    #     # check that the header row is correct
-
-    #     # check that the next row is Private room in Mission District,82,51027324,Pending,Private Room,1
-
-    #     # check that the last row is Apartment in Mission District,399,28668414,Pending,Entire Room,2
-
-    #     pass
+    def test_write_csv(self):
+        # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
+        # and save the result to a variable
+        detailed_database = get_detailed_listing_database("html_files/mission_district_search_results.html")
+        # call write csv on the variable you saved
+        write_csv(detailed_database, "test.csv")
+        # read in the csv that you wrote
+        csv_lines = []
+        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test.csv'), 'r') as f:
+            csv_reader = csv.reader(f)
+            for i in csv_reader:
+                csv_lines.append(i)
+        # check that there are 21 lines in the csv
+        self.assertEqual(len(csv_lines), 21)
+        # check that the header row is correct
+        self.assertEqual(csv_lines[0], ['Listing Title','Cost','Listing ID','Policy Number','Place Type','Number of Bedrooms'])
+        # check that the next row is Private room in Mission District,82,51027324,Pending,Private Room,1
+        self.assertEqual(csv_lines[1], ['Private room in Mission District','82','51027324','Pending','Private Room','1'])
+        # check that the last row is Apartment in Mission District,399,28668414,Pending,Entire Room,2
+        self.assertEqual(csv_lines[-1], ['Apartment in Mission District','399','28668414','Pending','Entire Room','2'])
 
     # def test_check_policy_numbers(self):
     #     # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
